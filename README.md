@@ -71,7 +71,6 @@ We will include a more complete version of the specification in future updates t
 
 *   **PptxGenJS**: The core engine that powers the PPTX generation.
 *   **Open Source Community**: For the continuous inspiration and tools.
-*   **Kimi-k1.5**: For generating the demo HTML and System Prompt validation.
 
 ---
 
