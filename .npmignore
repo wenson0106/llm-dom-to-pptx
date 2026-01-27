@@ -1,0 +1,15 @@
+# Source files
+src/
+dom2pptx/
+*.py
+
+# Config & Environment
+.env
+.gitignore
+
+# Demos
+index.html
+
+# Cache
+__pycache__/
+node_modules/

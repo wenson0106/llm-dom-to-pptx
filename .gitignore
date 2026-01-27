@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build artifacts (optional, but keeping dist is usually fine for small libs, though strictly dist matches .gitignore usually. Here we KEEP dist for the demo)
+# dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
