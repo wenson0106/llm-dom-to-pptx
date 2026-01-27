@@ -65,7 +65,13 @@ We have provided a robust `System_Prompt.md` file in this repo. You **MUST** use
 *   **Typography:** Enforces standard fonts that map to PPTX-safe fonts.
 
 ### 2. The Spec
-See `transform_spec.md` for the technical breakdown of exactly which CSS properties are supported (e.g., `box-shadow`, `border-l-4` "strip hacks", `tables`).
+We will include a more complete version of the specification in future updates to fully explain all supported DOM and CSS elements.
+
+## 🙏 Acknowledgements
+
+*   **PptxGenJS**: The core engine that powers the PPTX generation.
+*   **Open Source Community**: For the continuous inspiration and tools.
+*   **Kimi-k1.5**: For generating the demo HTML and System Prompt validation.
 
 ---
 
