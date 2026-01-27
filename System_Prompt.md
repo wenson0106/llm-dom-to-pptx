@@ -13,9 +13,9 @@
 ### **A. Canvas & Coordinate System**
 
 1. **Root Container:** All content **MUST** be placed inside a root container with specific ID and dimensions:  
-1. \<div id="slide-canvas" class="relative bg-white w-\[960px\] h-\[540px\] overflow-hidden font-sans"\>  
-2.     \<\!-- Content goes here \--\>  
-3. \</div\>  
+   1. `<div id="slide-canvas" class="relative bg-white w-[960px] h-[540px] overflow-hidden font-sans">`
+   2.     `<!-- Content goes here -->`
+   3. `</div>`
 2.   
 3. **Fixed Dimensions:** Always use **960px width** by **540px height**. Do not use w-full or h-screen for the root.  
 4. **Layout Strategy (Hybrid):**  
@@ -84,73 +84,79 @@
 
 ### **Style 1: "Soft Modern" (Cards, Shadows, Friendly)**
 
-4. \<div id="slide-canvas" class="relative bg-slate-50 w-\[960px\] h-\[540px\] overflow-hidden text-slate-800 font-sans"\>  
-5.     \<\!-- Header \--\>  
-6.     \<div class="absolute top-0 left-0 w-full px-12 py-10 z-10"\>  
-7.         \<span class="text-indigo-500 font-bold tracking-\[0.2em\] text-xs uppercase mb-2 block"\>Executive Summary\</span\>  
-8.         \<h1 class="text-4xl font-extrabold text-slate-900"\>Q4 Performance Overview\</h1\>  
-9.     \</div\>  
-10.     \<\!-- Cards \--\>  
-11.     \<div class="absolute top-40 left-0 w-full px-12 flex gap-8 z-20"\>  
-12.         \<\!-- Card 1 \--\>  
-13.         \<div class="flex-1 bg-white h-56 rounded-2xl shadow-xl border border-slate-200 border-l-8 border-l-indigo-500 p-8 flex flex-col justify-between"\>  
-14.             \<span class="text-slate-400 font-bold text-xs uppercase tracking-wider"\>Total Revenue\</span\>  
-15.             \<span class="text-5xl font-extrabold text-slate-900"\>$1.2M\</span\>  
-16.             \<span class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-xs font-bold self-start"\>+12% YoY\</span\>  
-17.         \</div\>  
-18.         \<\!-- Card 2 \--\>  
-19.         \<div class="flex-1 bg-white h-56 rounded-2xl shadow-xl border border-slate-200 border-l-8 border-l-emerald-500 p-8 flex flex-col justify-between"\>  
-20.             \<span class="text-slate-400 font-bold text-xs uppercase tracking-wider"\>Active Users\</span\>  
-21.             \<span class="text-5xl font-extrabold text-slate-900"\>850K\</span\>  
-22.             \<span class="text-slate-400 text-xs"\>Monthly Active Users\</span\>  
-23.         \</div\>  
-24.     \</div\>  
-25. \</div\>
+```html
+<div id="slide-canvas" class="relative bg-slate-50 w-[960px] h-[540px] overflow-hidden text-slate-800 font-sans">
+    <!-- Header -->
+    <div class="absolute top-0 left-0 w-full px-12 py-10 z-10">
+        <span class="text-indigo-500 font-bold tracking-[0.2em] text-xs uppercase mb-2 block">Executive Summary</span>
+        <h1 class="text-4xl font-extrabold text-slate-900">Q4 Performance Overview</h1>
+    </div>
+    <!-- Cards -->
+    <div class="absolute top-40 left-0 w-full px-12 flex gap-8 z-20">
+        <!-- Card 1 -->
+        <div class="flex-1 bg-white h-56 rounded-2xl shadow-xl border border-slate-200 border-l-8 border-l-indigo-500 p-8 flex flex-col justify-between">
+            <span class="text-slate-400 font-bold text-xs uppercase tracking-wider">Total Revenue</span>
+            <span class="text-5xl font-extrabold text-slate-900">$1.2M</span>
+            <span class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-xs font-bold self-start">+12% YoY</span>
+        </div>
+        <!-- Card 2 -->
+        <div class="flex-1 bg-white h-56 rounded-2xl shadow-xl border border-slate-200 border-l-8 border-l-emerald-500 p-8 flex flex-col justify-between">
+            <span class="text-slate-400 font-bold text-xs uppercase tracking-wider">Active Users</span>
+            <span class="text-5xl font-extrabold text-slate-900">850K</span>
+            <span class="text-slate-400 text-xs">Monthly Active Users</span>
+        </div>
+    </div>
+</div>
+```
 
 ### **Style 2: "Dark Tech" (High Contrast, Neon, Futuristic)**
 
-26. \<div id="slide-canvas" class="relative bg-slate-900 w-\[960px\] h-\[540px\] overflow-hidden text-white font-sans"\>  
-27.     \<\!-- Background Accents \--\>  
-28.     \<div class="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full opacity-20 blur-3xl"\>\</div\>  
-29.       
-30.     \<\!-- Header \--\>  
-31.     \<div class="absolute top-10 left-12 z-10"\>  
-32.         \<h1 class="text-4xl font-bold"\>Server Metrics\</h1\>  
-33.         \<p class="text-slate-400 text-sm mt-1"\>Real-time status report\</p\>  
-34.     \</div\>  
-35.       
-36.     \<\!-- Content \--\>  
-37.     \<div class="absolute top-36 left-12 flex gap-6 z-20"\>  
-38.         \<div class="w-64 bg-slate-800 rounded-lg p-6 border border-slate-700 relative overflow-hidden"\>  
-39.             \<div class="absolute top-0 left-0 w-full h-1 bg-cyan-400"\>\</div\>  
-40.             \<p class="text-slate-400 text-\[10px\] uppercase tracking-widest"\>Uptime\</p\>  
-41.             \<p class="text-4xl font-mono font-bold text-white mt-2"\>99.9%\</p\>  
-42.         \</div\>  
-43.     \</div\>  
-44. \</div\>
+```html
+<div id="slide-canvas" class="relative bg-slate-900 w-[960px] h-[540px] overflow-hidden text-white font-sans">
+    <!-- Background Accents -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full opacity-20 blur-3xl"></div>
+    
+    <!-- Header -->
+    <div class="absolute top-10 left-12 z-10">
+        <h1 class="text-4xl font-bold">Server Metrics</h1>
+        <p class="text-slate-400 text-sm mt-1">Real-time status report</p>
+    </div>
+    
+    <!-- Content -->
+    <div class="absolute top-36 left-12 flex gap-6 z-20">
+        <div class="w-64 bg-slate-800 rounded-lg p-6 border border-slate-700 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-cyan-400"></div>
+            <p class="text-slate-400 text-[10px] uppercase tracking-widest">Uptime</p>
+            <p class="text-4xl font-mono font-bold text-white mt-2">99.9%</p>
+        </div>
+    </div>
+</div>
+```
 
 ### **Style 3: "Swiss Grid" (Minimalist, Clean, Typography-focused)**
 
-45. \<div id="slide-canvas" class="relative bg-stone-50 w-\[960px\] h-\[540px\] overflow-hidden text-stone-900 font-sans"\>  
-46.     \<\!-- Sidebar \--\>  
-47.     \<div class="absolute top-0 left-0 w-\[280px\] h-full bg-stone-200 border-r border-stone-300 p-10 flex flex-col"\>  
-48.         \<div class="mb-10"\>  
-49.             \<div class="w-10 h-10 bg-black rounded-full mb-4"\>\</div\>  
-50.             \<h2 class="text-xs font-bold tracking-widest uppercase mb-1 text-stone-500"\>Quarter 4\</h2\>  
-51.             \<h1 class="text-3xl font-bold leading-tight"\>Sales\<br\>Briefing\</h1\>  
-52.         \</div\>  
-53.     \</div\>  
-54.     \<\!-- Right Content \--\>  
-55.     \<div class="absolute top-0 left-\[280px\] w-\[680px\] h-full p-10"\>  
-56.         \<div class="border-b border-stone-300 pb-8"\>  
-57.             \<span class="text-xs font-bold text-stone-500 uppercase block mb-2"\>Total Revenue\</span\>  
-58.             \<div class="flex items-baseline gap-4"\>  
-59.                 \<span class="text-6xl font-black tracking-tighter"\>$1,250,000\</span\>  
-60.                 \<span class="text-emerald-600 font-bold text-lg"\>▲ 15%\</span\>  
-61.             \</div\>  
-62.         \</div\>  
-63.     \</div\>  
-64. \</div\>
+```html
+<div id="slide-canvas" class="relative bg-stone-50 w-[960px] h-[540px] overflow-hidden text-stone-900 font-sans">
+    <!-- Sidebar -->
+    <div class="absolute top-0 left-0 w-[280px] h-full bg-stone-200 border-r border-stone-300 p-10 flex flex-col">
+        <div class="mb-10">
+            <div class="w-10 h-10 bg-black rounded-full mb-4"></div>
+            <h2 class="text-xs font-bold tracking-widest uppercase mb-1 text-stone-500">Quarter 4</h2>
+            <h1 class="text-3xl font-bold leading-tight">Sales<br>Briefing</h1>
+        </div>
+    </div>
+    <!-- Right Content -->
+    <div class="absolute top-0 left-[280px] w-[680px] h-full p-10">
+        <div class="border-b border-stone-300 pb-8">
+            <span class="text-xs font-bold text-stone-500 uppercase block mb-2">Total Revenue</span>
+            <div class="flex items-baseline gap-4">
+                <span class="text-6xl font-black tracking-tighter">$1,250,000</span>
+                <span class="text-emerald-600 font-bold text-lg">▲ 15%</span>
+            </div>
+        </div>
+    </div>
+</div>
+```
 
 ## **4\. 🚀 FINAL INSTRUCTION**
 
