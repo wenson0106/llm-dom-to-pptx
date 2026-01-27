@@ -4,7 +4,7 @@
 
 `llm-dom-to-pptx` is a lightweight JavaScript library designed to bridge the gap between LLM-generated web designs (HTML/CSS) and Office productivity tools. Unlike screenshot-based tools, this library parses the DOM to create **fully editable** shapes, text blocks, and tables in PowerPoint.
 
-![Demo Video](demo/demo.mp4)
+<video src="demo/demo.mp4" controls width="100%"></video>
 
 ## 🚀 Features
 
