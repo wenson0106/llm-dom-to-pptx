@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.0.0
+ * LLM DOM to PPTX - v1.0.1
  * Converts Semantic HTML/CSS (e.g. from LLMs) into editable PPTX.
  * 
  * Dependencies:

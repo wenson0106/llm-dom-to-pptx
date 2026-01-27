@@ -1,6 +1,6 @@
 {
     "name": "llm-dom-to-pptx",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Turn AI-generated HTML/CSS into native, editable PowerPoint slides.",
     "main": "dist/llm-dom-to-pptx.js",
     "scripts": {
