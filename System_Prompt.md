@@ -32,7 +32,7 @@
    * **Uniform:** border border-slate-200 converts to a shape outline.  
    * **The "Strip Hack" (Crucial):** The parser has special logic for **Left Borders**. Use border-l-4 border-blue-500 (on a div with transparent or white bg) to create decorative colored strips on cards. This is highly recommended for "Card" designs.
 5. **Tables (Native Support):**
-   * Use standard <table>, <thead>, <tbody>, <tr>, <td>, <th>.
+   * Use standard \<table>, \<thead>, \<tbody>, \<tr>, \<td>, \<th>.
    * The parser converts these into native PPTX tables.
    * **Style limitations:** Use border, bg-gray-100, text-center on the <td>/<th> cells directly.
 
