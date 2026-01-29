@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.0.1
+ * LLM DOM to PPTX - v1.0.2
  * Converts Semantic HTML/CSS (e.g. from LLMs) into editable PPTX.
  * 
  * Dependencies:
@@ -207,8 +207,6 @@
                     const fontWeight = (style.fontWeight === '700' || style.fontWeight === 'bold' || parseInt(style.fontWeight) >= 600);
 
                     // Normalize Whitespace:
-                    // Collapse all whitespace (newlines, tabs, concurrent spaces) to single space
-                    // This matches browser rendering behavior for standard text.
                     let runText = text.replace(/\s+/g, ' ');
 
                     if (style.textTransform === 'uppercase') runText = runText.toUpperCase();
@@ -220,7 +218,6 @@
                         fontSize: fontSize * 0.75, // px to pt
                         bold: fontWeight,
                         fontFace: getSafeFont(style.fontFamily),
-                        // charSpacing: Removed due to rendering issues (huge gaps) in PptxGenJS
                         breakLine: false
                     };
 
@@ -228,10 +225,32 @@
                         runOpts.transparency = colorParsed.transparency;
                     }
 
-                    // highlight (background color) support
-                    const bgParsed = parseColor(style.backgroundColor, parseFloat(style.opacity) || 1);
-                    if (bgParsed && bgParsed.transparency < 100) {
-                        runOpts.highlight = bgParsed.color;
+                    // NOTE: We intentionally do NOT apply 'highlight' here because:
+                    // 1. If this text is in a parent that has a background, that background
+                    //    is already drawn as a shape by processNode.
+                    // 2. Adding highlight would create duplicate/overlapping backgrounds.
+                    // 3. PPTX highlight is meant for inline text highlighting, not block backgrounds.
+
+                    // Border-bottom as text underline support (only for inline/paragraph elements)
+                    // Common pattern: <span class="border-b-2 border-b-indigo-500">text</span>
+                    // Exclude headings (h1-h6) as they use border-b as section separators
+                    const parentTag = node.tagName ? node.tagName.toUpperCase() : '';
+                    const isInlineOrParagraph = ['SPAN', 'P', 'A', 'LABEL', 'STRONG', 'EM', 'B', 'I'].includes(parentTag);
+
+                    const borderBottomWidth = parseFloat(style.borderBottomWidth) || 0;
+                    const borderBottomStyle = style.borderBottomStyle;
+                    if (isInlineOrParagraph && borderBottomWidth > 0 && borderBottomStyle !== 'none') {
+                        runOpts.underline = { style: 'sng' }; // Single underline
+                        // Try to get underline color from border color
+                        const borderColorParsed = parseColor(style.borderBottomColor);
+                        if (borderColorParsed) {
+                            runOpts.underline.color = borderColorParsed.color;
+                        }
+                    }
+
+                    // CSS text-decoration: underline support
+                    if (style.textDecoration && style.textDecoration.includes('underline')) {
+                        runOpts.underline = { style: 'sng' };
                     }
 
                     runs.push({
@@ -279,12 +298,17 @@
             // Relative Coordinates
             const x = pxToInch(rect.left - containerRect.left);
             const y = pxToInch(rect.top - containerRect.top) - currentSlideYOffset;
-            const w = pxToInch(rect.width);
-            const h = pxToInch(rect.height);
+            let w = pxToInch(rect.width);
+            let h = pxToInch(rect.height);
+
+            // Enforce minimum dimensions for very thin elements (like h-px lines)
+            const MIN_DIM = 0.02; // ~2px in PowerPoint
+            if (h < MIN_DIM && h > 0) h = MIN_DIM;
+            if (w < MIN_DIM && w > 0) w = MIN_DIM;
 
             // --- TABLE HANDLING ---
             if (node.tagName === 'TABLE') {
-                // Shadow Handler (Updated)
+                // Shadow Handler
                 if (style.boxShadow && style.boxShadow !== 'none') {
                     let tableBg = style.backgroundColor;
                     let tableOp = parseFloat(style.opacity) || 1;
@@ -294,7 +318,6 @@
                         shadowFill = { color: 'FFFFFF', transparency: 99 };
                     }
 
-                    // Now we trust 'h' matches sum(rowHeights) because we enforce it below.
                     slide.addShape(pres.ShapeType.rect, {
                         x: x, y: y, w: w, h: h,
                         fill: { color: shadowFill.color, transparency: shadowFill.transparency },
@@ -303,15 +326,12 @@
                     });
                 }
 
-
                 const tableRows = [];
                 let colWidths = [];
-                let rowHeights = []; // New strictly mapped row heights
+                let rowHeights = [];
 
                 if (node.rows.length > 0) {
                     colWidths = Array.from(node.rows[0].cells).map(c => pxToInch(c.getBoundingClientRect().width));
-
-                    // Capture exact row heights
                     rowHeights = Array.from(node.rows).map(r => pxToInch(r.getBoundingClientRect().height));
                 }
 
@@ -321,7 +341,6 @@
                         const cStyle = window.getComputedStyle(cell);
                         const cRuns = collectTextRuns(cell, cStyle);
 
-                        // backgroundColor fallback: Cell -> Row -> Row Parent (tbody/thead) -> Table
                         let effectiveBg = cStyle.backgroundColor;
                         let effectiveOpacity = parseFloat(cStyle.opacity) || 1;
 
@@ -338,19 +357,10 @@
                         }
 
                         const bgP = parseColor(effectiveBg, effectiveOpacity);
-                        // Borders logic handles separately or assumes solid for now
-                        const bCP = parseColor(cStyle.borderColor);
 
                         let vAlign = 'top';
                         if (cStyle.verticalAlign === 'middle') vAlign = 'middle';
                         if (cStyle.verticalAlign === 'bottom') vAlign = 'bottom';
-
-
-
-                        // Padding / Margin Handling
-                        // PptxGenJS 'margin' is in Inches (like x,y,w,h), NOT Points.
-                        // Previous bug: * 0.75 converted px -> pt, but was interpreted as Inches (Massive margins).
-                        // Fix: Use pxToInch().
 
                         const pt = pxToInch(parseFloat(cStyle.paddingTop) || 0);
                         const pr = pxToInch(parseFloat(cStyle.paddingRight) || 0);
@@ -363,7 +373,6 @@
                                 const co = parseColor(c) || { color: '000000' };
                                 return { pt: parseFloat(w) * 0.75, color: co.color };
                             }
-                            // Fallback to row border
                             if (fallbackW && parseFloat(fallbackW) > 0 && fallbackS !== 'none') {
                                 const co = parseColor(fallbackC) || { color: '000000' };
                                 return { pt: parseFloat(fallbackW) * 0.75, color: co.color };
@@ -371,7 +380,6 @@
                             return null;
                         };
 
-                        // Fallback styles from Row
                         const rStyle = row ? window.getComputedStyle(row) : null;
                         let rbTopW = 0, rbTopC = null, rbTopS = 'none';
                         let rbBotW = 0, rbBotC = null, rbBotS = 'none';
@@ -380,9 +388,6 @@
                             rbTopW = rStyle.borderTopWidth; rbTopC = rStyle.borderTopColor; rbTopS = rStyle.borderTopStyle;
                             rbBotW = rStyle.borderBottomWidth; rbBotC = rStyle.borderBottomColor; rbBotS = rStyle.borderBottomStyle;
                         }
-
-                        // NOTE: Row side borders usually don't apply to every cell, but for simple 'border-b' on div/tr, we want it.
-                        // We will allow Top/Bottom fallback. Side borders on TR are rare/tricky (start/end).
 
                         const bTop = getBdr(cStyle.borderTopWidth, cStyle.borderTopColor, cStyle.borderTopStyle, rbTopW, rbTopC, rbTopS);
                         const bRight = getBdr(cStyle.borderRightWidth, cStyle.borderRightColor, cStyle.borderRightStyle);
@@ -418,53 +423,16 @@
                 });
 
                 if (tableRows.length > 0) {
-
-                    // Manual Pagination Logic to fix 'Array expected' error in PptxGenJS when autoPage:true + rowH
-                    const availableH = PPT_HEIGHT_IN - y - 0.5; // 0.5 inch safety margin
-
+                    const availableH = PPT_HEIGHT_IN - y - 0.5;
                     if (h <= availableH) {
-                        // Case A: Fits on current slide
                         slide.addTable(tableRows, {
                             x: x, y: y, w: w, colW: colWidths, rowH: rowHeights, autoPage: false
                         });
                     } else {
-                        // Case B: Needs split
-                        console.warn('Table does not fit on current slide, splitting manually...');
-
-                        // NOTE: This is a simplified split logic.
-                        // Ideally we should calculate exactly how many rows fit.
-                        // Depending on user needs, we might implement complex splitting here.
-                        // For now, if it exceeds, we just push the whole table to the NEXT slide if it fits there.
-                        // If it's bigger than a whole slide, we rely on autoPage=false which might clip, 
-                        // or we stick to the user's current request of fixing the CRASH.
-
-                        // Strategy: 
-                        // 1. If y is significantly down (>1 inch), try creating a new slide and put table there.
-                        // 2. If it is already at top or still too big, we just add it and warn (handling >1 page tables requires loop).
-
+                        console.warn('Table does not fit on current slide, splitting manually (disabled autoPage)...');
                         if (y > 1.0) {
-                            // Move to next slide
                             slide = pres.addSlide();
-                            currentSlideYOffset += PPT_HEIGHT_IN; // Estimate offset
-
-                            // Re-calculate y for new slide (should be roughly top margin)
-                            // But since we are inside a loop with absolute-ish coordinates... 
-                            // If we move to a new slide, we reset y to top margin?
-                            // Let's place it at top margin (0.5 in)
-                            const newY = 0.5;
-
-                            // We need to adjust 'currentSlideYOffset' so that subsequent elements (also processed by absolute rect)
-                            // land correctly relative to this new slide.
-                            // old absolute Y of table was e.g. 5.0. New relative Y is 0.5. 
-                            // So new offset = 5.0 - 0.5 = 4.5.
-                            // But this might break other elements aligned with the table.
-                            // For this patch, we mainly ensure it doesn't crash.
-
-                            // Let's try to just add it to current slide with autoPage:false first, 
-                            // but PptxGenJS might clip it. 
-                            // The user error was SPECIFICALLY about the crash.
-
-                            // FIX: Just disable autoPage.
+                            currentSlideYOffset += PPT_HEIGHT_IN;
                             slide.addTable(tableRows, {
                                 x: x, y: y, w: w, colW: colWidths, rowH: rowHeights, autoPage: false
                             });
@@ -489,7 +457,14 @@
 
             let shapeOpts = { x, y, w, h };
 
+            // -- NEW: Precise Border Radius Logic --
+            const rtl = parseFloat(style.borderTopLeftRadius) || 0;
+            const rtr = parseFloat(style.borderTopRightRadius) || 0;
+            const rbr = parseFloat(style.borderBottomRightRadius) || 0;
+            const rbl = parseFloat(style.borderBottomLeftRadius) || 0;
+
             const borderRadius = parseFloat(style.borderRadius) || 0;
+
             // Strict circle check
             const isCircle = (Math.abs(rect.width - rect.height) < 2) && (borderRadius >= rect.width / 2 - 1);
 
@@ -498,20 +473,62 @@
                 shapeOpts.shadow = { type: 'outer', angle: 45, blur: 6, offset: 2, opacity: 0.2 };
             }
 
-            // --- Radius Logic ---
             let shapeType = pres.ShapeType.rect;
+            let rotation = 0;
+
             if (isCircle) {
                 shapeType = pres.ShapeType.ellipse;
-            } else if (borderRadius > 0) {
-                const minDim = Math.min(rect.width, rect.height);
-                let ratio = borderRadius / (minDim / 2);
-                shapeOpts.rectRadius = Math.min(ratio, 1.0);
-                shapeType = pres.ShapeType.roundRect || 'roundRect';
+            } else {
+                // Determine Shape based on corners
+                // Case 1: All Uniform
+                if (rtl === rtr && rtr === rbr && rbr === rbl && rtl > 0) {
+                    const minDim = Math.min(rect.width, rect.height);
+                    let ratio = rtl / (minDim / 2);
+                    shapeOpts.rectRadius = Math.min(ratio, 1.0);
+                    shapeType = pres.ShapeType.roundRect;
+                }
+                // Case 2: Vertical Rounding (Left or Right) -> PptxGenJS doesn't inherently support 'Right Rounded' well without rotation?
+                // Actually PptxGenJS has 'round2SameRect' which is Top Corners Rounded by default.
+
+                // Case 3: Top Rounded (Common in cards)
+                else if (rtl > 0 && rtr > 0 && rbr === 0 && rbl === 0) {
+                    shapeType = pres.ShapeType.round2SameRect;
+                    // Rotate? Default is Top.
+                    rotation = 0;
+                }
+                // Case 4: Bottom Rounded
+                else if (rtl === 0 && rtr === 0 && rbr > 0 && rbl > 0) {
+                    shapeType = pres.ShapeType.round2SameRect;
+                    rotation = 180;
+                }
+                // Case 5: Single corners or diagonal? Fallback to rect (Square) to avoid "All Rounded" bug.
+                else if (borderRadius > 0) {
+                    // It has some radius, but not uniform and not simple top/bottom pair.
+                    // Fallback: If we use 'roundRect' it rounds all. 
+                    // Better to use 'rect' (Sharp) than incorrect 'roundRect' for things like "only top-left".
+                    shapeType = pres.ShapeType.rect;
+                }
+            }
+
+            if (rotation !== 0) {
+                shapeOpts.rotate = rotation;
             }
 
             // --- Border Logic ---
-            if (hasBorder && style.borderLeftWidth === style.borderRightWidth) {
-                shapeOpts.line = { color: borderParsed.color, width: borderW * 0.75 };
+            // Check all 4 sides for true uniformity
+            const bTop = parseFloat(style.borderTopWidth) || 0;
+            const bRight = parseFloat(style.borderRightWidth) || 0;
+            const bBot = parseFloat(style.borderBottomWidth) || 0;
+            const bLeft = parseFloat(style.borderLeftWidth) || 0;
+
+            const isUniformBorder = (bTop === bRight && bRight === bBot && bBot === bLeft && bTop > 0);
+
+            if (isUniformBorder && borderParsed) {
+                const lineOpts = { color: borderParsed.color, width: bTop * 0.75 };
+                if (borderParsed.transparency > 0) {
+                    lineOpts.transparency = borderParsed.transparency;
+                }
+                shapeOpts.line = lineOpts;
             } else {
                 shapeOpts.line = null;
             }
@@ -519,29 +536,133 @@
             // --- B. LEFT ACCENT BORDER (Custom Strategy) ---
             const lW = parseFloat(style.borderLeftWidth) || 0;
             const leftBorderParsed = parseColor(style.borderLeftColor);
-
             const hasLeftBorder = lW > 0 && leftBorderParsed && style.borderStyle !== 'none';
 
-            if (hasLeftBorder && !shapeOpts.line) {
+            if (hasLeftBorder && !isUniformBorder) {
                 if (hasFill) {
-                    // Underlay Strategy
                     const underlayOpts = { ...shapeOpts };
                     underlayOpts.fill = { color: leftBorderParsed.color };
                     underlayOpts.line = null;
+
+                    // If rotated, the underlay needs careful handling. 
+                    // Simpler: Just draw a side strip if rotation is involved, or complex underlay.
+                    // For now, keep original logic but verify rotation impact.
                     slide.addShape(shapeType, underlayOpts);
 
-                    // Adjust Main Shape
                     const borderInch = pxToInch(lW);
                     shapeOpts.x += borderInch;
                     shapeOpts.w -= borderInch;
-                    delete shapeOpts.shadow; // Remove duplicate shadow
+                    delete shapeOpts.shadow;
                 } else {
-                    // Side Strip Strategy
                     slide.addShape(pres.ShapeType.rect, {
                         x: x, y: y, w: pxToInch(lW), h: h,
                         fill: { color: leftBorderParsed.color },
                         rectRadius: isCircle ? 0 : (shapeOpts.rectRadius || 0)
                     });
+                }
+            }
+
+            // --- B2. RIGHT ACCENT BORDER (Custom Strategy) ---
+            const rW = parseFloat(style.borderRightWidth) || 0;
+            const rightBorderParsed = parseColor(style.borderRightColor);
+            const hasRightBorder = rW > 0 && rightBorderParsed && style.borderRightStyle !== 'none';
+
+            if (hasRightBorder && !isUniformBorder) {
+                if (hasFill) {
+                    const underlayOpts = { ...shapeOpts };
+                    underlayOpts.fill = { color: rightBorderParsed.color };
+                    if (rightBorderParsed.transparency > 0) {
+                        underlayOpts.fill.transparency = rightBorderParsed.transparency;
+                    }
+                    underlayOpts.line = null;
+                    slide.addShape(shapeType, underlayOpts);
+
+                    // Shrink main shape from right to reveal right border
+                    const borderInch = pxToInch(rW);
+                    shapeOpts.w -= borderInch;
+                    delete shapeOpts.shadow;
+                } else {
+                    // No fill: Draw simple strip at right edge
+                    const stripOpts = {
+                        x: x + w - pxToInch(rW), y: y, w: pxToInch(rW), h: h,
+                        fill: { color: rightBorderParsed.color }
+                    };
+                    if (rightBorderParsed.transparency > 0) {
+                        stripOpts.fill.transparency = rightBorderParsed.transparency;
+                    }
+                    slide.addShape(pres.ShapeType.rect, stripOpts);
+                }
+            }
+
+            // --- C. TOP ACCENT BORDER (Underlay Strategy - BEFORE main shape) ---
+            const tW = parseFloat(style.borderTopWidth) || 0;
+            const topBorderParsed = parseColor(style.borderTopColor);
+            const hasTopBorder = tW > 0 && topBorderParsed && style.borderTopStyle !== 'none';
+
+            if (hasTopBorder && !isUniformBorder) {
+                if (hasFill) {
+                    // Draw full shape in border color as underlay
+                    const underlayOpts = { ...shapeOpts };
+                    underlayOpts.fill = { color: topBorderParsed.color };
+                    if (topBorderParsed.transparency > 0) {
+                        underlayOpts.fill.transparency = topBorderParsed.transparency;
+                    }
+                    underlayOpts.line = null;
+                    slide.addShape(shapeType, underlayOpts);
+
+                    // Offset main shape to reveal top border
+                    const borderInch = pxToInch(tW);
+                    shapeOpts.y += borderInch;
+                    shapeOpts.h -= borderInch;
+                    delete shapeOpts.shadow;
+                } else {
+                    // No fill: Draw simple strip
+                    const stripOpts = {
+                        x: x, y: y, w: w, h: pxToInch(tW),
+                        fill: { color: topBorderParsed.color }
+                    };
+                    if (topBorderParsed.transparency > 0) {
+                        stripOpts.fill.transparency = topBorderParsed.transparency;
+                    }
+                    slide.addShape(pres.ShapeType.rect, stripOpts);
+                }
+            }
+
+            // --- D. BOTTOM ACCENT BORDER (Underlay Strategy - BEFORE main shape) ---
+            const bW = parseFloat(style.borderBottomWidth) || 0;
+            const bottomBorderParsed = parseColor(style.borderBottomColor);
+            const hasBottomBorder = bW > 0 && bottomBorderParsed && style.borderBottomStyle !== 'none';
+
+            if (hasBottomBorder && !isUniformBorder) {
+                if (hasFill && !hasTopBorder) {
+                    // Only do underlay if we didn't already do it for top border
+                    const underlayOpts = { ...shapeOpts };
+                    underlayOpts.fill = { color: bottomBorderParsed.color };
+                    if (bottomBorderParsed.transparency > 0) {
+                        underlayOpts.fill.transparency = bottomBorderParsed.transparency;
+                    }
+                    underlayOpts.line = null;
+                    slide.addShape(shapeType, underlayOpts);
+
+                    // Shrink main shape from bottom to reveal bottom border
+                    const borderInch = pxToInch(bW);
+                    shapeOpts.h -= borderInch;
+                    delete shapeOpts.shadow;
+                } else if (hasFill && hasTopBorder) {
+                    // Both top and bottom: already have underlay, just shrink from bottom too
+                    const borderInch = pxToInch(bW);
+                    shapeOpts.h -= borderInch;
+                } else {
+                    // No fill: Draw simple strip at bottom
+                    const bH = pxToInch(bW);
+                    const stripOpts = {
+                        x: x, y: y + h - bH, w: w, h: bH,
+                        fill: { color: bottomBorderParsed.color }
+                    };
+                    if (bottomBorderParsed.transparency > 0) {
+                        stripOpts.fill.transparency = bottomBorderParsed.transparency;
+                    }
+                    slide.addShape(pres.ShapeType.rect, stripOpts);
                 }
             }
 
@@ -558,23 +679,17 @@
 
             // --- Gradient Fallback ---
             if (style.backgroundImage && style.backgroundImage.includes('gradient')) {
-                // If it's a bar/strip
                 if (rect.height < 15 && rect.width > 100) {
                     slide.addShape(pres.ShapeType.rect, {
                         x: x, y: y, w: w, h: h,
-                        fill: { color: '4F46E5' } // Fallback
+                        fill: { color: '4F46E5' }
                     });
                 }
             }
 
             // --- C. TEXT CONTENT ---
             if (isTextBlock(node)) {
-
-                // Extra check: If this is a very deep node, does it have children that are also text blocks?
-                // Logic: isTextBlock returns true if it has text nodes.
-
                 const runs = collectTextRuns(node, style);
-
                 if (runs.length > 0) {
                     if (runs.length > 0) {
                         runs[0].text = runs[0].text.replace(/^\s+/, '');
@@ -589,33 +704,48 @@
                         if (style.textAlign === 'justify') align = 'justify';
 
                         let valign = 'top';
-                        const pt = parseFloat(style.paddingTop) || 0;
-                        const pb = parseFloat(style.paddingBottom) || 0;
+                        const ptPx = parseFloat(style.paddingTop) || 0;
+                        const pbPx = parseFloat(style.paddingBottom) || 0;
+                        const plPx = parseFloat(style.paddingLeft) || 0;
+                        const prPx = parseFloat(style.paddingRight) || 0;
+
                         const boxH = rect.height;
                         const textH = parseFloat(style.fontSize) * 1.2;
 
                         if (style.display.includes('flex') && style.alignItems === 'center') valign = 'middle';
-                        else if (Math.abs(pt - pb) < 5 && pt > 5) valign = 'middle';
+                        else if (Math.abs(ptPx - pbPx) < 5 && ptPx > 5) valign = 'middle';
                         else if (boxH < 40 && boxH > textH) valign = 'middle';
 
                         if (style.display.includes('flex')) {
                             if (style.justifyContent === 'center') align = 'center';
                             else if (style.justifyContent === 'flex-end' || style.justifyContent === 'right') align = 'right';
                         }
-                        // Removed forced center for SPAN. It should respect parent/computed alignment.
-                        // if (node.tagName === 'SPAN') { align = 'center'; valign = 'middle'; }
 
-                        const widthBuffer = pxToInch(12); // Increased buffer (was 4) to prevent CJK wrapping issues
-                        const inset = Math.max(0, pxToInch(Math.min(pt, parseFloat(style.paddingLeft) || 0)));
+                        // Convert to Inches for Geometry
+                        const pt = pxToInch(ptPx);
+                        const pr = pxToInch(prPx);
+                        const pb = pxToInch(pbPx);
+                        const pl = pxToInch(plPx);
 
+                        // Geometry Shift Strategy for Padding
+                        let tx = x + pl;
+                        let ty = y + pt;
+                        let tw = w - pl - pr;
+                        let th = h - pt - pb;
+
+                        if (tw < 0) tw = 0;
+                        if (th < 0) th = 0;
+
+                        const widthBuffer = pxToInch(12);
+
+                        // We use inset:0 because we already applied padding via x/y/w/h
                         slide.addText(runs, {
-                            x: x, y: y, w: w + widthBuffer, h: h,
-                            align: align, valign: valign, margin: 0, inset: inset,
+                            x: tx, y: ty, w: tw + widthBuffer, h: th,
+                            align: align, valign: valign, margin: 0, inset: 0,
                             autoFit: false, wrap: true
                         });
                     }
 
-                    // Mark children as processed
                     const markSeen = (n) => {
                         n.childNodes.forEach(c => {
                             if (c.nodeType === Node.ELEMENT_NODE) {
@@ -627,12 +757,39 @@
                     markSeen(node);
                 }
             } else {
-                Array.from(node.children).forEach(processNode);
+                // -- NEW: Z-INDEX SORTING & RECURSION --
+
+                // Get all element children
+                const children = Array.from(node.children);
+
+                // Map to object with z-index
+                const sortedChildren = children.map(c => {
+                    const zStr = window.getComputedStyle(c).zIndex;
+                    return {
+                        node: c,
+                        zIndex: (zStr === 'auto') ? 0 : parseInt(zStr)
+                    };
+                });
+
+                // Sort: ascending z-index
+                sortedChildren.sort((a, b) => a.zIndex - b.zIndex);
+
+                // Recurse
+                sortedChildren.forEach(item => processNode(item.node));
             }
         }
 
-        // Start Processing
-        Array.from(container.children).forEach(processNode);
+        // Start Processing (Sorted Top-Level Children)
+        const rootChildren = Array.from(container.children).map(c => {
+            const zStr = window.getComputedStyle(c).zIndex;
+            return {
+                node: c,
+                zIndex: (zStr === 'auto') ? 0 : parseInt(zStr)
+            };
+        });
+        rootChildren.sort((a, b) => a.zIndex - b.zIndex);
+
+        rootChildren.forEach(item => processNode(item.node));
 
         // Save
         pres.writeFile({ fileName: fileName });
