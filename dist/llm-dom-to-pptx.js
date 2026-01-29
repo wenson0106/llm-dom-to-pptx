@@ -1440,7 +1440,6 @@
     }
 
     // --- Exports ---
-    // --- Exports ---
     root.LLMDomToPptx = {
         export: exportToPPTX,
         addSlide: addSlideToPres,
