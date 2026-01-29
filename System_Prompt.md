@@ -36,9 +36,10 @@
    * The parser converts these into native PPTX tables.
    * **Style limitations:** Use border, bg-gray-100, text-center on the <td>/<th> cells directly.
 
-### **C. Unsupported / Forbidden**
+### **C. Supported & Unsupported**
 
-* ❌ **No Gradients:** Use solid colors only. Complex gradients render poorly.  
+* ✅ **Gradients:** `bg-gradient-to-br`, `linear-gradient()`, `radial-gradient()` are fully supported.
+* ✅ **SVG Icons:** Inline `<svg>` elements are automatically converted to images.
 * ❌ **No Clip-Path:** Do not use CSS polygons; they will render as full rectangles.  
 * ❌ **No Pseudo-elements:** Avoid ::before / ::after. Use real DOM nodes.
 
