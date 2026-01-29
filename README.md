@@ -9,71 +9,105 @@ https://github.com/user-attachments/assets/527efb28-b0ae-450a-9710-60cac2924acc
 
 ## 🚀 Features
 
-- **Semantic Parsing**: Intelligently maps HTML structure (Flexbox, Grid, Tables) to PPTX layouts.
-- **Style Preservation**: captures background colors, rounded corners, borders, shadows, and fonts.
-- **Text Precision**: Handles complex text runs, bolding, colors, and alignments.
-- **Zero Backend**: Runs entirely in the browser using [PptxGenJS](https://gitbrent.github.io/PptxGenJS/).
+| Feature | Status |
+|---------|--------|
+| Background Colors & Transparency | ✅ |
+| Borders & Rounded Corners | ✅ |
+| Box Shadows | ✅ |
+| Gradient Backgrounds (Linear/Radial) | ✅ |
+| SVG Icons | ✅ |
+| Text Styling (Bold/Italic/Underline/Letter Spacing) | ✅ |
+| Multi-Slide Export | ✅ |
+| Modular API (Manual Control) | ✅ |
 
-## 📦 Installation & Usage
+## 📦 Installation
 
-You can use the library directly via a script tag (e.g., via CDN once hosted, or locally).
-
-### 1. Include Dependencies
-This library depends on `PptxGenJS`.
-
+### CDN (Recommended)
 ```html
-<!-- PptxGenJS (Required) -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+<!-- Dependencies -->
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/libs/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
 
-<!-- llm-dom-to-pptx -->
-<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.0.3/dist/llm-dom-to-pptx.js"></script>
+<!-- llm-dom-to-pptx v1.1.3 -->
+<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.1.3/dist/llm-dom-to-pptx.js"></script>
 ```
 
-### 2. Prepare Your HTML
-Create a container for your slide. A fixed width (e.g., 960px) works best for 16:9 mapping.
+## 🎯 Usage
+
+### Basic Export (Single Slide)
+```javascript
+// Export by element ID
+await llmDomToPptx.export('slide-canvas', { fileName: 'presentation.pptx' });
+```
+
+### Multi-Slide Export
+```javascript
+// Export all matching elements as separate slides
+await llmDomToPptx.export('.slide-page', { fileName: 'multi_slides.pptx' });
+```
+
+### Advanced Usage (Manual Control)
+```javascript
+const pres = new PptxGenJS();
+pres.layout = 'LAYOUT_16x9';
+
+const slide = pres.addSlide();
+slide.background = { color: 'FFFFFF' };
+
+// Add DOM element to slide with offset positioning
+await llmDomToPptx.addSlide(pres, slide, document.getElementById('my-card'), {
+    x: 0.5,  // Horizontal offset (inches)
+    y: 0.3   // Vertical offset (inches)
+});
+
+await pres.writeFile({ fileName: 'custom.pptx' });
+```
+
+## 📐 HTML Structure
+
+For best results, use a fixed-size container (960×540px for 16:9):
 
 ```html
-<div id="slide-canvas" style="width: 960px; height: 540px; background: white;">
-    <!-- Your AI-generated content here -->
+<div id="slide-canvas" style="width: 960px; height: 540px; position: relative;">
     <h1>Quarterly Report</h1>
     <p>Success driven by innovation.</p>
 </div>
 ```
 
-### 3. Export to PPTX
-Call the export function when ready.
+## 🧠 System Prompt
 
-```javascript
-// Export using the element ID
-window.LLMDomToPptx.export('slide-canvas', { fileName: 'My_AI_Presentation.pptx' });
-```
+This library works best with **LLM-generated HTML** that follows specific constraints. Use the included `System_Prompt.md` when instructing your LLM (GPT-4, Claude, etc.) to generate slides.
 
-## 🧠 The Secret Sauce: System Prompt & Spec
+**Key constraints:**
+- Root container: `width: 960px; height: 540px`
+- Use absolute positioning for major sections
+- Use Flexbox for internal layouts
+- Stick to standard web fonts
 
-**Crucial:** This library is not a generic "convert any website to PPTX" tool. It is designed to work with **LLM-generated HTML** that follows specific constraints (the "Laws of Physics").
+## 📋 API Reference
 
-To get good results, you must instruct your LLM (GPT-4, Claude 3.5, etc.) to generate HTML that this parser understands.
+### `llmDomToPptx.export(selector, options)`
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `selector` | `string \| HTMLElement` | Element ID, CSS selector, or DOM element |
+| `options.fileName` | `string` | Output filename (default: `presentation.pptx`) |
+| `options.x` | `number` | Horizontal offset in inches |
+| `options.y` | `number` | Vertical offset in inches |
 
-### 1. The System Prompt
-We have provided a robust `System_Prompt.md` file in this repo. You **MUST** use this (or a variation of it) when asking an LLM to generate slides.
-
-**Key constraints enforced by the prompt:**
-*   **Root Container:** `<div id="slide-canvas" style="width: 960px; height: 540px;">`
-*   **Layouts:** Uses absolute positioning for major sections, Flexbox for internals.
-*   **Shapes:** Defines how CSS `border-radius` maps to PPTX Shapes (Rectangles vs Ellipses).
-*   **Typography:** Enforces standard fonts that map to PPTX-safe fonts.
-
-### 2. The Spec
-We will include a more complete version of the specification in future updates to fully explain all supported DOM and CSS elements.
+### `llmDomToPptx.addSlide(pres, slide, element, options)`
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `pres` | `PptxGenJS` | PptxGenJS presentation instance |
+| `slide` | `Slide` | Slide object from `pres.addSlide()` |
+| `element` | `HTMLElement` | DOM element to convert |
+| `options.x` | `number` | Horizontal offset in inches |
+| `options.y` | `number` | Vertical offset in inches |
 
 ## 🙏 Acknowledgements
 
-*   **PptxGenJS**: The core engine that powers the PPTX generation.
-*   **Open Source Community**: For the continuous inspiration and tools.
+- **PptxGenJS**: The core engine powering PPTX generation.
+- **Open Source Community**: For continuous inspiration and tools.
 
 ---
 
-
-
+**Version:** 1.1.3
