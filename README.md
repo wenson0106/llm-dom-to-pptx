@@ -37,13 +37,13 @@ https://github.com/user-attachments/assets/527efb28-b0ae-450a-9710-60cac2924acc
 ### Basic Export (Single Slide)
 ```javascript
 // Export by element ID
-await llmDomToPptx.export('slide-canvas', { fileName: 'presentation.pptx' });
+await LLMDomToPptx.export('slide-canvas', { fileName: 'presentation.pptx' });
 ```
 
 ### Multi-Slide Export
 ```javascript
 // Export all matching elements as separate slides
-await llmDomToPptx.export('.slide-page', { fileName: 'multi_slides.pptx' });
+await LLMDomToPptx.export('.slide-page', { fileName: 'multi_slides.pptx' });
 ```
 
 ### Advanced Usage (Manual Control)
@@ -55,7 +55,7 @@ const slide = pres.addSlide();
 slide.background = { color: 'FFFFFF' };
 
 // Add DOM element to slide with offset positioning
-await llmDomToPptx.addSlide(pres, slide, document.getElementById('my-card'), {
+await LLMDomToPptx.addSlide(pres, slide, document.getElementById('my-card'), {
     x: 0.5,  // Horizontal offset (inches)
     y: 0.3   // Vertical offset (inches)
 });
@@ -68,7 +68,8 @@ await pres.writeFile({ fileName: 'custom.pptx' });
 For best results, use a fixed-size container (960×540px for 16:9):
 
 ```html
-<div id="slide-canvas" style="width: 960px; height: 540px; position: relative;">
+<!-- Added class for multi-slide selection -->
+<div id="slide-canvas" class="slide-page" style="width: 960px; height: 540px; position: relative;">
     <h1>Quarterly Report</h1>
     <p>Success driven by innovation.</p>
 </div>
@@ -86,7 +87,7 @@ This library works best with **LLM-generated HTML** that follows specific constr
 
 ## 📋 API Reference
 
-### `llmDomToPptx.export(selector, options)`
+### `LLMDomToPptx.export(selector, options)`
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `selector` | `string \| HTMLElement` | Element ID, CSS selector, or DOM element |
@@ -94,7 +95,7 @@ This library works best with **LLM-generated HTML** that follows specific constr
 | `options.x` | `number` | Horizontal offset in inches |
 | `options.y` | `number` | Vertical offset in inches |
 
-### `llmDomToPptx.addSlide(pres, slide, element, options)`
+### `LLMDomToPptx.addSlide(pres, slide, element, options)`
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `pres` | `PptxGenJS` | PptxGenJS presentation instance |

@@ -1441,7 +1441,7 @@
 
     // --- Exports ---
     // --- Exports ---
-    root.llmDomToPptx = {
+    root.LLMDomToPptx = {
         export: exportToPPTX,
         addSlide: addSlideToPres,
         version: "1.1.3"
