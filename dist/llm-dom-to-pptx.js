@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.0.2
+ * LLM DOM to PPTX - v1.0.3
  * Converts Semantic HTML/CSS (e.g. from LLMs) into editable PPTX.
  * 
  * Dependencies:
@@ -220,6 +220,27 @@
                         fontFace: getSafeFont(style.fontFamily),
                         breakLine: false
                     };
+
+                    // Letter Spacing (Tracking) Support
+                    // Converts CSS letter-spacing (px/em) to PPTX charSpacing (points)
+                    const letterSpacingStr = style.letterSpacing;
+                    if (letterSpacingStr && letterSpacingStr !== 'normal') {
+                        let spacingPx = 0;
+                        if (letterSpacingStr.includes('em')) {
+                            // e.g. "0.2em" -> 0.2 * fontSize
+                            spacingPx = parseFloat(letterSpacingStr) * (parseFloat(style.fontSize) || 16);
+                        } else if (letterSpacingStr.includes('px')) {
+                            spacingPx = parseFloat(letterSpacingStr);
+                        } else if (!isNaN(parseFloat(letterSpacingStr))) {
+                            // Fallback if just number (unlikely in CSS computed style but safe)
+                            spacingPx = parseFloat(letterSpacingStr);
+                        }
+
+                        // Convert px to pt (1px = 0.75pt)
+                        if (spacingPx !== 0) {
+                            runOpts.charSpacing = spacingPx * 0.75;
+                        }
+                    }
 
                     if (colorParsed && colorParsed.transparency > 0) {
                         runOpts.transparency = colorParsed.transparency;
@@ -736,14 +757,37 @@
                         if (tw < 0) tw = 0;
                         if (th < 0) th = 0;
 
-                        const widthBuffer = pxToInch(12);
+                        // Line Height (Leading) Support
+                        // Convert CSS line-height to PPTX lineSpacing (Points)
+                        let lineSpacingPoints = null;
+                        const lhStr = style.lineHeight;
+                        if (lhStr && lhStr !== 'normal') {
+                            const lhPx = parseFloat(lhStr);
+                            if (!isNaN(lhPx)) {
+                                lineSpacingPoints = lhPx * 0.75; // px to pt
+                            }
+                        }
+
+                        // Add small buffer to text box width to prevent premature wrapping
+                        // due to minor font rendering differences
+                        const widthBuffer = pxToInch(2);
+                        let finalTx = tx;
+
+                        // Adjust x position for center alignment to keep it visually centered
+                        if (align === 'center') finalTx -= widthBuffer / 2;
 
                         // We use inset:0 because we already applied padding via x/y/w/h
-                        slide.addText(runs, {
-                            x: tx, y: ty, w: tw + widthBuffer, h: th,
+                        const textOpts = {
+                            x: finalTx, y: ty, w: tw + widthBuffer, h: th,
                             align: align, valign: valign, margin: 0, inset: 0,
                             autoFit: false, wrap: true
-                        });
+                        };
+
+                        if (lineSpacingPoints) {
+                            textOpts.lineSpacing = lineSpacingPoints;
+                        }
+
+                        slide.addText(runs, textOpts);
                     }
 
                     const markSeen = (n) => {

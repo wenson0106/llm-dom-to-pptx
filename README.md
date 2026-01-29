@@ -28,7 +28,7 @@ This library depends on `PptxGenJS`.
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
 
 <!-- llm-dom-to-pptx -->
-<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.0.2/dist/llm-dom-to-pptx.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.0.3/dist/llm-dom-to-pptx.js"></script>
 ```
 
 ### 2. Prepare Your HTML
