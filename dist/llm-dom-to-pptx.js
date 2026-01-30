@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.2.6-FONT-SIM
+ * LLM DOM to PPTX - v1.2.7-FONT-SIM
  * Implements "Pre-Export Font Simulation" to fix text wrapping.
  * Function: Swaps browser fonts to PPTX-safe fonts (e.g. Arial) before measuring to ensure metrics match.
  * Use: LLMDomToPptx.export('selector', { fileName: '...' })
@@ -266,8 +266,11 @@
         }
 
         async processRoot() {
-            const notes = this.container.getAttribute('data-speaker-notes');
-            if (notes) this.slide.addNotes(notes);
+            let notes = this.container.getAttribute('data-speaker-notes');
+            if (notes) {
+                notes = notes.replace(/\\n/g, '\n');
+                this.slide.addNotes(notes);
+            }
             await this.renderVisuals(this.container, true, 1.0);
         }
 
@@ -568,9 +571,18 @@
             const isHeading = /^H[1-6]$/.test(node.tagName);
 
             let widthBuffer = 0;
+
+            // 2. Text Width Buffer Strategy
+            // A. Bold Body Text (Original Logic)
             if (isBold && !isHeading) {
-                // Add 7% buffer for bold text
                 widthBuffer = tW * 0.07;
+            }
+            // B. Fit-Content Headings (New Logic)
+            else if (isHeading && this.isFitContentHeading(node, style)) {
+                widthBuffer = tW * 0.07;
+            }
+
+            if (widthBuffer > 0) {
                 tW += widthBuffer;
 
                 // 3. Alignment-based X-Offset
@@ -658,6 +670,41 @@
             });
             return hasText;
         }
+
+        isFitContentHeading(node, style) {
+            // Check specific display modes that shrink-wrap content
+            if (style.display === 'inline' || style.display === 'inline-block' || style.width === 'fit-content') return true;
+
+            // Check Flex Item behavior
+            const parent = node.parentElement;
+            if (parent) {
+                const parentStyle = window.getComputedStyle(parent);
+                if (parentStyle.display.includes('flex')) {
+                    const direction = parentStyle.flexDirection || 'row';
+                    const align = parentStyle.alignItems || 'stretch';
+
+                    // If Flex Row -> Items wrap content unless grow is set (simplification)
+                    if (direction.includes('row')) {
+                        // In row, width is content-based unless flex-grow is set
+                        // NOTE: computed width will be pixels, so we can't check 'auto'.
+                        // If flex-grow is 0, it doesn't expand to fill space -> likely fit-content.
+                        if (style.flexGrow === '0') return true;
+                    }
+                    // If Flex Column -> Items stretch (width: auto = full) unless aligned
+                    else {
+                        const parentAlign = align; // parent's align-items
+                        const selfAlign = style.alignSelf;
+
+                        // If self-align is set to something other than auto/stretch -> it shrinks
+                        if (selfAlign !== 'auto' && selfAlign !== 'stretch') return true;
+
+                        // If self-align is auto, check parent align-items
+                        if (selfAlign === 'auto' && parentAlign !== 'stretch') return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 
     async function addSlide(pres, slide, container, options) {
@@ -718,6 +765,6 @@
         }
     }
 
-    root.LLMDomToPptx = { export: exportToPPTX, addSlide: addSlide };
+    root.LLMDomToPptx = { export: exportToPPTX };
 
 })(window);

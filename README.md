@@ -29,8 +29,8 @@ https://github.com/user-attachments/assets/527efb28-b0ae-450a-9710-60cac2924acc
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/libs/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
 
-<!-- llm-dom-to-pptx v1.2.6 -->
-<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.2.6/dist/llm-dom-to-pptx.js"></script>
+<!-- llm-dom-to-pptx v1.2.7 -->
+<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.2.7/dist/llm-dom-to-pptx.js"></script>
 ```
 
 ## 🎯 Usage
@@ -47,22 +47,15 @@ await LLMDomToPptx.export('slide-canvas', { fileName: 'presentation.pptx' });
 await LLMDomToPptx.export('.slide-page', { fileName: 'multi_slides.pptx' });
 ```
 
-### Advanced Usage (Manual Control)
-```javascript
-const pres = new PptxGenJS();
-pres.layout = 'LAYOUT_16x9';
+### Adding Speaker Notes
+You can add speaker notes to any slide using the `data-speaker-notes` attribute on the root container. Use `\n` for newlines.
 
-const slide = pres.addSlide();
-slide.background = { color: 'FFFFFF' };
-
-// Add DOM element to slide with offset positioning
-await LLMDomToPptx.addSlide(pres, slide, document.getElementById('my-card'), {
-    x: 0.5,  // Horizontal offset (inches)
-    y: 0.3   // Vertical offset (inches)
-});
-
-await pres.writeFile({ fileName: 'custom.pptx' });
+```html
+<div id="slide-canvas" data-speaker-notes="Intro: Verify Q4 results.\nKey Point: Revenue up 12%.">
+    <!-- Slide content -->
+</div>
 ```
+
 
 ## 📐 HTML Structure
 
@@ -96,14 +89,6 @@ This library works best with **LLM-generated HTML** that follows specific constr
 | `options.x` | `number` | Horizontal offset in inches |
 | `options.y` | `number` | Vertical offset in inches |
 
-### `LLMDomToPptx.addSlide(pres, slide, element, options)`
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `pres` | `PptxGenJS` | PptxGenJS presentation instance |
-| `slide` | `Slide` | Slide object from `pres.addSlide()` |
-| `element` | `HTMLElement` | DOM element to convert |
-| `options.x` | `number` | Horizontal offset in inches |
-| `options.y` | `number` | Vertical offset in inches |
 
 ## 🙏 Acknowledgements
 
@@ -112,4 +97,4 @@ This library works best with **LLM-generated HTML** that follows specific constr
 
 ---
 
-**Version:** 1.2.6
+**Version:** 1.2.7
