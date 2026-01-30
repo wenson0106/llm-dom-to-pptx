@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.2.5-FONT-SIM
+ * LLM DOM to PPTX - v1.2.6-FONT-SIM
  * Implements "Pre-Export Font Simulation" to fix text wrapping.
  * Function: Swaps browser fonts to PPTX-safe fonts (e.g. Arial) before measuring to ensure metrics match.
  * Use: LLMDomToPptx.export('selector', { fileName: '...' })
@@ -152,7 +152,7 @@
             return null;
         }
 
-        const finalAlpha = a * safeNum(opacity, 1);
+        const finalAlpha = a * (isNaN(parseFloat(opacity)) ? 1 : Math.max(0, Math.min(1, parseFloat(opacity))));
         const toHex = (n) => {
             const h = Math.round(safeNum(n)).toString(16).toUpperCase();
             return h.length === 1 ? '0' + h : h;
@@ -255,7 +255,7 @@
             await this.processRoot();
             const sortedChildren = this.getSortedChildren(this.container);
             for (const item of sortedChildren) {
-                await this.processNode(item.node);
+                await this.processNode(item.node, 1.0); // Start with 1.0 opacity
             }
         }
 
@@ -268,17 +268,22 @@
         async processRoot() {
             const notes = this.container.getAttribute('data-speaker-notes');
             if (notes) this.slide.addNotes(notes);
-            await this.renderVisuals(this.container, true);
+            await this.renderVisuals(this.container, true, 1.0);
         }
 
-        async processNode(node) {
+        async processNode(node, inheritedOpacity = 1.0) {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
             if (this.processedNodes.has(node)) return;
             this.processedNodes.add(node);
 
             const style = window.getComputedStyle(node);
             const rect = node.getBoundingClientRect();
-            if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) return;
+
+            // Calculate Accumulated Opacity
+            const elementOpacity = parseFloat(style.opacity) || 1;
+            const currentOpacity = inheritedOpacity * elementOpacity;
+
+            if (style.display === 'none' || style.visibility === 'hidden' || currentOpacity === 0) return;
             if (rect.width < 1 || rect.height < 1) return;
 
             if (node.tagName === 'svg' || node.tagName === 'SVG') {
@@ -292,14 +297,14 @@
                 return;
             }
 
-            await this.renderVisuals(node, false);
+            await this.renderVisuals(node, false, currentOpacity);
 
             if (this.isTextBlock(node)) {
-                this.renderText(node, style, rect);
-            } else {
-                const children = this.getSortedChildren(node);
-                for (const item of children) await this.processNode(item.node);
+                this.renderText(node, style, rect, currentOpacity);
             }
+            // ALWAYS recurse to check for nested visual elements (e.g. Slide 7 Case C)
+            const children = this.getSortedChildren(node);
+            for (const item of children) await this.processNode(item.node, currentOpacity);
         }
 
         getPos(rect) {
@@ -314,13 +319,12 @@
         // ==========================================
         // 4. SHARED RENDER LOGIC
         // ==========================================
-        async renderVisuals(node, isRoot) {
+        async renderVisuals(node, isRoot, opacity = 1.0) {
             const style = window.getComputedStyle(node);
             const rect = node.getBoundingClientRect();
             const pos = this.getPos(rect);
             const { x, y, w, h } = pos;
 
-            const opacity = parseFloat(style.opacity) || 1;
             let bgParsed = parseColor(style.backgroundColor, opacity);
             let hasFill = bgParsed && bgParsed.transparency < 100;
 
@@ -342,7 +346,7 @@
                 const minD = Math.min(wIn, hIn);
                 const avgR = (rTL + rTR + rBL + rBR) / 4;
                 const rInch = pxToInch(avgR);
-                const ratio = rInch / (safeNum(pxToInch(minD)) * 0.5);
+                const ratio = rInch / safeNum(pxToInch(minD));
                 return safeNum(Math.min(ratio, 1.0), 0);
             };
 
@@ -364,7 +368,7 @@
                 // Layered approach for NON-TRANSPARENT background
                 // Draw border "underlay" shapes, then the main fill covers the interior
                 if (bTop > 0 && style.borderTopStyle !== 'none') {
-                    const c = parseColor(style.borderTopColor);
+                    const c = parseColor(style.borderTopColor, opacity);
                     let bLi = safeNum(pxToInch(parseFloat(style.borderLeftWidth) || 0));
                     let bRi = safeNum(pxToInch(parseFloat(style.borderRightWidth) || 0));
                     let bTi = safeNum(pxToInch(parseFloat(style.borderTopWidth) || 0));
@@ -380,7 +384,7 @@
                     });
                 }
                 if (bBot > 0 && style.borderBottomStyle !== 'none') {
-                    const c = parseColor(style.borderBottomColor);
+                    const c = parseColor(style.borderBottomColor, opacity);
                     let bLi = safeNum(pxToInch(parseFloat(style.borderLeftWidth) || 0));
                     let bRi = safeNum(pxToInch(parseFloat(style.borderRightWidth) || 0));
                     let bBi = safeNum(pxToInch(parseFloat(style.borderBottomWidth) || 0));
@@ -396,7 +400,7 @@
                     });
                 }
                 if (bLeft > 0 && style.borderLeftStyle !== 'none') {
-                    const c = parseColor(style.borderLeftColor);
+                    const c = parseColor(style.borderLeftColor, opacity);
                     let bLi = safeNum(pxToInch(parseFloat(style.borderLeftWidth) || 0));
                     let lX = safeNum(x - bLi);
                     let lY = safeNum(y);
@@ -410,7 +414,7 @@
                     });
                 }
                 if (bRight > 0 && style.borderRightStyle !== 'none') {
-                    const c = parseColor(style.borderRightColor);
+                    const c = parseColor(style.borderRightColor, opacity);
                     let bRi = safeNum(pxToInch(parseFloat(style.borderRightWidth) || 0));
                     let lX = safeNum(x);
                     let lY = safeNum(y);
@@ -428,7 +432,7 @@
             } else if (hasBorder && !hasFill) {
                 // TRANSPARENT background: Use lines instead of shapes
                 if (bTop > 0 && style.borderTopStyle !== 'none') {
-                    const c = parseColor(style.borderTopColor);
+                    const c = parseColor(style.borderTopColor, opacity);
                     const lineY = safeNum(y - pxToInch(bTop) / 2);
                     this.slide.addShape('line', {
                         x: x, y: lineY,
@@ -437,7 +441,7 @@
                     });
                 }
                 if (bBot > 0 && style.borderBottomStyle !== 'none') {
-                    const c = parseColor(style.borderBottomColor);
+                    const c = parseColor(style.borderBottomColor, opacity);
                     const lineY = safeNum(y + h + pxToInch(bBot) / 2);
                     this.slide.addShape('line', {
                         x: x, y: lineY,
@@ -446,7 +450,7 @@
                     });
                 }
                 if (bLeft > 0 && style.borderLeftStyle !== 'none') {
-                    const c = parseColor(style.borderLeftColor);
+                    const c = parseColor(style.borderLeftColor, opacity);
                     const lineX = safeNum(x - pxToInch(bLeft) / 2);
                     this.slide.addShape('line', {
                         x: lineX, y: y,
@@ -455,7 +459,7 @@
                     });
                 }
                 if (bRight > 0 && style.borderRightStyle !== 'none') {
-                    const c = parseColor(style.borderRightColor);
+                    const c = parseColor(style.borderRightColor, opacity);
                     const lineX = safeNum(x + w + pxToInch(bRight) / 2);
                     this.slide.addShape('line', {
                         x: lineX, y: y,
@@ -477,9 +481,9 @@
                 }
 
                 if (isUniform && hasBorder) {
-                    const c = parseColor(style.borderTopColor);
+                    const c = parseColor(style.borderTopColor, opacity);
                     if (c) {
-                        mainOpts.line = { color: c.color, width: parseFloat(style.borderTopWidth) * 0.75 };
+                        mainOpts.line = { color: c.color, width: parseFloat(style.borderTopWidth) * 0.75, transparency: c.transparency };
                         // Add Dash Support
                         const dashMap = {
                             'dashed': 'dash',
@@ -504,8 +508,8 @@
             }
         }
 
-        renderText(node, style, rect) {
-            const runs = this.collectTextRuns(node, style);
+        renderText(node, style, rect, opacity = 1.0) {
+            const runs = this.collectTextRuns(node, style, opacity);
             if (runs.length === 0) return;
 
             const pos = this.getPos(rect);
@@ -599,7 +603,7 @@
             }
         }
 
-        collectTextRuns(node, parentStyle) {
+        collectTextRuns(node, parentStyle, opacity = 1.0) {
             let runs = [];
             node.childNodes.forEach(child => {
                 if (child.nodeType === Node.TEXT_NODE) {
@@ -609,12 +613,12 @@
                     if (clean === ' ' && runs.length > 0 && runs[runs.length - 1].text.endsWith(' ')) return;
 
                     const s = (node.nodeType === Node.ELEMENT_NODE) ? window.getComputedStyle(node) : parentStyle;
-                    const c = parseColor(s.color, parseFloat(s.opacity) || 1);
+                    const c = parseColor(s.color, opacity);
 
                     let run = {
                         text: clean, options: {
                             color: c ? c.color : '000000',
-                            fontSize: safeNum(parseFloat(s.fontSize) * 0.75, 10), // Removed 0.99 scaling
+                            fontSize: safeNum(parseFloat(s.fontSize) * 0.75, 10),
                             bold: (parseInt(s.fontWeight) || 400) >= 600,
                             italic: (s.fontStyle === 'italic' || s.fontStyle === 'oblique'),
                             fontFace: getSafeFont(s.fontFamily)
@@ -625,8 +629,22 @@
 
                     runs.push(run);
                 } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    if (child.tagName === 'BR') runs.push({ text: '', options: { breakLine: true } });
-                    else runs.push(...this.collectTextRuns(child, window.getComputedStyle(child)));
+                    if (child.tagName === 'BR') {
+                        runs.push({ text: '', options: { breakLine: true } });
+                    } else {
+                        // Skip children that have their own visuals (fills/borders), they will be processed as separate shapes
+                        const s = window.getComputedStyle(child);
+                        const hasFill = s.backgroundColor !== 'transparent' && s.backgroundColor !== 'rgba(0, 0, 0, 0)';
+                        const hasBorder = (parseFloat(s.borderTopWidth) || 0) > 0 || (parseFloat(s.borderBottomWidth) || 0) > 0;
+                        if (hasFill || hasBorder || (s.boxShadow && s.boxShadow !== 'none')) {
+                            // Don't recurse into text of visual nodes here, they handle themselves
+                            return;
+                        }
+                        // Mark as processed so processNode doesn't call renderText on it again later
+                        this.processedNodes.add(child);
+                        const childOpacity = opacity * (parseFloat(s.opacity) || 1);
+                        runs.push(...this.collectTextRuns(child, s, childOpacity));
+                    }
                 }
             });
             return runs;
@@ -679,8 +697,10 @@
 
             for (const t of targets) {
                 const s = pres.addSlide();
-                const bg = window.getComputedStyle(t).backgroundColor;
-                const bgP = parseColor(bg);
+                const style = window.getComputedStyle(t);
+                const bg = style.backgroundColor;
+                const rootOpacity = parseFloat(style.opacity) || 1;
+                const bgP = parseColor(bg, rootOpacity);
                 if (bgP && bgP.transparency < 100) {
                     let bgObj = { color: bgP.color };
                     if (bgP.transparency > 0) bgObj.transparency = bgP.transparency;

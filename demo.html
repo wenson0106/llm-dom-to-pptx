@@ -72,7 +72,7 @@
                 <p class="text-sm text-blue-900 leading-relaxed text-justify">
                     This is a long block of text intended to test the line wrapping capabilities of the library.
                     It should wrap perfectly at the edge of this container without being cut off or overflowing.
-                    The font simulation engine (v1.2.5) should ensure that even if the browser renders "Inter",
+                    The font simulation engine (v1.2.6) should ensure that even if the browser renders "Inter",
                     PowerPoint (rendering "Arial") will have enough space because we normalized weights and added a 1%
                     safety buffer.
                 </p>
@@ -253,7 +253,7 @@
                         <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Accuracy</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div class="text-2xl font-bold text-gray-800">1.2.5</div>
+                        <div class="text-2xl font-bold text-gray-800">1.2.6</div>
                         <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Version</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -371,6 +371,127 @@
         </div>
     </div>
 
+
+    <!-- SLIDE 7: Opacity & Transparency Test -->
+    <div class="slide p-10 flex flex-col gap-6" id="slide7" style="background-color: #f0fdf4;">
+        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-green-500 pb-2 w-full">7. Opacity & Transparency
+            Test</h1>
+
+        <div class="grid grid-cols-2 gap-8">
+            <!-- Case A: RGBA & Alpha -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold mb-4 text-green-700">A. RGBA & Alpha Test</h3>
+                <div class="flex flex-wrap gap-4">
+                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        style="background-color: rgba(59, 130, 246, 0.1);">10%</div>
+                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        style="background-color: rgba(59, 130, 246, 0.3);">30%</div>
+                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        style="background-color: rgba(59, 130, 246, 0.5);">50%</div>
+                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        style="background-color: rgba(59, 130, 246, 0.8);">80%</div>
+                </div>
+                <div class="mt-4 p-3 bg-gray-50 rounded border-2 border-blue-500/30 text-xs font-mono">
+                    border: border-blue-500/30 (RGBA Border)
+                </div>
+            </div>
+
+            <!-- Case B: CSS Opacity (Node Opacity) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold mb-4 text-green-700">B. CSS Opacity Property</h3>
+                <div class="flex gap-4">
+                    <div class="w-24 h-24 bg-red-500 border-4 border-black flex items-center justify-center text-white font-bold"
+                        style="opacity: 0.5;">
+                        Opacity 0.5
+                    </div>
+                    <div class="w-24 h-24 bg-purple-500 border-4 border-black flex items-center justify-center text-white font-bold"
+                        style="opacity: 0.2;">
+                        Opacity 0.2
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-2">Tests if border and fill both respect parent's opacity.</p>
+            </div>
+
+            <!-- Case C: Nested Opacity -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold mb-4 text-green-700">C. Nested Opacity</h3>
+                <div class="p-4 bg-blue-500 text-white rounded-xl" style="opacity: 0.6;">
+                    Outer (0.6)
+                    <div class="mt-2 p-2 bg-yellow-400 text-black rounded-lg border-2 border-black"
+                        style="opacity: 0.5;">
+                        Inner (0.5)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case D: Text Transparency -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold mb-4 text-green-700">D. Text Transparency</h3>
+                <div class="bg-black p-4 rounded-xl">
+                    <p class="text-white text-xl font-bold" style="opacity: 1;">Full Opacity Text</p>
+                    <p class="text-white text-xl font-bold" style="opacity: 0.5;">50% Opacity Text</p>
+                    <p class="text-white text-xl font-bold" style="opacity: 0.2;">20% Opacity Text</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: Border Radius Calibration -->
+    <div class="slide p-10 flex flex-col gap-8" id="slide8">
+        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-yellow-500 pb-2 w-full">8. Border Radius
+            Calibration</h1>
+
+        <div class="grid grid-cols-4 gap-8">
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-sm border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    SM (2px)</div>
+                <span class="text-xs text-gray-500">rounded-sm</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-md border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    MD (6px)</div>
+                <span class="text-xs text-gray-500">rounded-md</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-lg border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    LG (8px)</div>
+                <span class="text-xs text-gray-500">rounded-lg</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-xl border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    XL (12px)</div>
+                <span class="text-xs text-gray-500">rounded-xl</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-2xl border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    2XL (16px)</div>
+                <span class="text-xs text-gray-500">rounded-2xl</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-3xl border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    3XL (24px)</div>
+                <span class="text-xs text-gray-500">rounded-3xl</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-[80px] bg-blue-500 rounded-full border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    Full (Pill)</div>
+                <span class="text-xs text-gray-500">rounded-full</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-blue-500 rounded-full border-2 border-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                    Circle</div>
+                <span class="text-xs text-gray-500">rounded-full</span>
+            </div>
+        </div>
+    </div>
 
     <script>
         async function downloadPPTX() {
