@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM-DOM-to-PPTX Feature Demo</title>
+    <!-- Tailwind CSS for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PptxGenJS (Same config as border_test.html) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+    <script src="./dist/llm-dom-to-pptx.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #eef2f6;
+            padding: 20px;
+        }
+
+        /* Slide Container (16:9 Aspect Ratio) */
+        .slide {
+            width: 960px;
+            height: 540px;
+            background: white;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+        }
+
+        /* Test Blocks */
+        .test-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="fixed top-4 right-4 z-50">
+        <button onclick="downloadPPTX()"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition hover:scale-105">
+            Download Demo PPTX
+        </button>
+    </div>
+
+    <!-- SLIDE 1: Typography & Wrapping -->
+    <div class="slide p-10 flex flex-col gap-6" id="slide1">
+        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 w-full">1. Typography & Text
+            Wrapping</h1>
+
+        <div class="grid grid-cols-2 gap-8">
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-xl font-bold text-blue-600 mb-2">Basic Text</h2>
+                <p class="text-gray-700 mb-2">This is a standard paragraph element with default spacing.</p>
+                <p class="text-gray-700 font-bold mb-2">This is bold text (Inter 700).</p>
+                <p class="text-gray-700 italic border-l-4 border-gray-400 pl-2">This is italicized text with a left
+                    border.</p>
+                <p class="text-red-500 font-semibold mt-2">Colored Red Text (Weight 600).</p>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h2 class="text-xl font-bold text-blue-800 mb-2">Wrapping Stress Test</h2>
+                <p class="text-sm text-blue-900 leading-relaxed text-justify">
+                    This is a long block of text intended to test the line wrapping capabilities of the library.
+                    It should wrap perfectly at the edge of this container without being cut off or overflowing.
+                    The font simulation engine (v1.2.2) should ensure that even if the browser renders "Inter",
+                    PowerPoint (rendering "Arial") will have enough space because we normalized weights and added a 1%
+                    safety buffer.
+                </p>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mt-4">
+            <div class="bg-white border border-gray-300 shadow-sm px-6 py-3 rounded text-center w-1/3">Centered Text
+            </div>
+            <div class="bg-white border border-gray-300 shadow-sm px-6 py-3 rounded text-right w-1/3">Right Aligned
+            </div>
+            <div class="bg-black text-white px-6 py-3 rounded w-1/4 text-center font-mono">Monospace</div>
+        </div>
+    </div>
+
+
+    <!-- SLIDE 2: Borders & Radius (The Core Fixes) -->
+    <div class="slide p-10 flex flex-col gap-8" id="slide2">
+        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-green-500 pb-2 w-full">2. Borders & Radius (v1.2
+            Fixes)</h1>
+
+        <div class="grid grid-cols-4 gap-6 h-full">
+            <!-- 2.1 Uniform Border -->
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-white border-4 border-orange-500 rounded-lg shadow-md flex items-center justify-center text-orange-600 font-bold">
+                    Uniform
+                </div>
+                <span class="text-xs text-gray-500">Border-4 Orange + Radius</span>
+            </div>
+
+            <!-- 2.2 Individual Borders -->
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-white border-t-8 border-blue-500 border-b-4 border-red-500 shadow-md flex items-center justify-center text-gray-600 font-bold">
+                    Top/Bot
+                </div>
+                <span class="text-xs text-gray-500">T-8 Blue, B-4 Red</span>
+            </div>
+
+            <!-- 2.3 Rainbow Border (The Bug Fix) -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 bg-white flex items-center justify-center font-bold text-gray-700 shadow-lg"
+                    style="border-top: 8px solid #EF4444; border-right: 8px solid #F59E0B; border-bottom: 8px solid #10B981; border-left: 8px solid #3B82F6;">
+                    Rainbow
+                </div>
+                <span class="text-xs text-gray-500">4 Colors, No Radius</span>
+            </div>
+
+            <!-- 2.4 Rainbow + Radius (The Ultimate Test) -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 bg-white flex items-center justify-center font-bold text-gray-700 shadow-lg rounded-2xl"
+                    style="border-top: 8px solid #EF4444; border-right: 8px solid #F59E0B; border-bottom: 8px solid #10B981; border-left: 8px solid #3B82F6;">
+                    Layered
+                </div>
+                <span class="text-xs text-gray-500">Rainbow + Rounded XL</span>
+            </div>
+
+            <!-- 2.5 Circle -->
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-purple-100 border-4 border-purple-600 rounded-full flex items-center justify-center text-purple-700 font-bold">
+                    Circle
+                </div>
+                <span class="text-xs text-gray-500">Rounded Full</span>
+            </div>
+
+            <!-- 2.6 Pill Button -->
+            <div class="flex flex-col items-center gap-2 justify-center">
+                <div
+                    class="px-8 py-3 bg-indigo-600 text-white rounded-full border-2 border-indigo-400 font-bold shadow-lg">
+                    Pill Shape
+                </div>
+                <span class="text-xs text-gray-500">Rect + Radius Full</span>
+            </div>
+
+            <!-- 2.7 Transparent + Border -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 border-4 border-gray-800 rounded-lg flex items-center justify-center font-bold text-gray-800"
+                    style="background: transparent;">
+                    Transp.
+                </div>
+                <span class="text-xs text-gray-500">No BG, Border Only</span>
+            </div>
+
+            <!-- 2.8 Dashed/Dotted (Native Support) -->
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 bg-white border-4 border-dashed border-gray-400 rounded-lg flex items-center justify-center font-bold text-gray-500">
+                    Dashed
+                </div>
+                <span class="text-xs text-gray-500">Dashed Border</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SLIDE 3: Effects (Gradients, Shadows, SVG) -->
+    <div class="slide p-10 flex flex-col gap-8" id="slide3">
+        <h1 class="text-4xl font-bold text-white mb-4 z-10 relative">3. Visual Effects</h1>
+
+        <!-- Background Gradient Simulation -->
+        <div class="absolute inset-0 z-0 bg-gradient-to-br from-indigo-900 to-purple-800"></div>
+
+        <div class="grid grid-cols-3 gap-8 z-10 relative">
+            <!-- 3.1 Gradient Card -->
+            <div class="h-48 rounded-2xl flex flex-col items-center justify-center text-white shadow-2xl p-6"
+                style="background-image: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%);">
+                <h3 class="text-2xl font-bold drop-shadow-md">Gradient BG</h3>
+                <p class="text-white/90 font-medium">CSS Linear Gradient</p>
+            </div>
+
+            <!-- 3.2 Shadow Card -->
+            <div
+                class="h-48 bg-white rounded-2xl flex flex-col items-center justify-center text-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6">
+                <h3 class="text-2xl font-bold">Deep Shadow</h3>
+                <p class="text-gray-500">box-shadow converted</p>
+            </div>
+
+            <!-- 3.3 SVG Icon -->
+            <div
+                class="h-48 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-6">
+                <!-- Simple SVG Smile -->
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" class="mb-2"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    <line x1="9" y1="9" x2="9.01" y2="9" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    <line x1="15" y1="9" x2="15.01" y2="9" stroke="white" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <h3 class="text-xl font-bold">SVG Support</h3>
+                <p class="text-white/70 text-sm">Vector -> PNG conversion</p>
+            </div>
+        </div>
+
+        <div class="mt-4 p-4 bg-white/20 text-white rounded-lg backdrop-blur-md border border-white/10">
+            <h4 class="font-bold border-b border-white/30 pb-1 mb-2">Transparency Test</h4>
+            <div class="flex gap-4">
+                <div class="w-16 h-16 bg-red-500/50 rounded-full flex items-center justify-center">50%</div>
+                <div class="w-16 h-16 bg-blue-500/30 rounded-full flex items-center justify-center">30%</div>
+                <div class="w-16 h-16 bg-green-500/80 rounded-full flex items-center justify-center">80%</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SLIDE 4: Complex Component -->
+    <div class="slide flex items-center justify-center bg-gray-50" id="slide4"
+        data-speaker-notes="This slide demonstrates a complex card component with mixed features.">
+        <div class="w-[600px] bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
+            <!-- Card Header (Gradient + SVG) -->
+            <div class="h-32 bg-gradient-to-r from-blue-600 to-indigo-600 p-8 flex justify-between items-center">
+                <div class="text-white">
+                    <h2 class="text-3xl font-bold">Modern UI Card</h2>
+                    <p class="text-blue-100">Complex Layout Test</p>
+                </div>
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-8">
+                <p class="text-gray-600 mb-6 leading-relaxed">
+                    This component tests the library's ability to handle nested layouts, mixed border radii (top vs
+                    bottom),
+                    shadows, gradients, and text alignment simultaneously.
+                </p>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="text-2xl font-bold text-gray-800">100%</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Accuracy</div>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="text-2xl font-bold text-gray-800">1.2.2</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Version</div>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="text-2xl font-bold text-gray-800">Fix</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Safe-Mode</div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div
+                    class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl text-center shadow-lg cursor-pointer">
+                    Confirm Action
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        async function downloadPPTX() {
+            console.log("Starting export...");
+            try {
+                // Export all elements with class 'slide'
+                await LLMDomToPptx.export('.slide', {
+                    fileName: 'LLM_PPTX_Demo_Suite.pptx'
+                });
+                console.log("Export complete!");
+            } catch (e) {
+                console.error("Export failed:", e);
+                alert("Export failed: " + e.message);
+            }
+        }
+    </script>
+</body>
+
+</html>
