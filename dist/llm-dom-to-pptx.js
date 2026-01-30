@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.2.3-FONT-SIM
+ * LLM DOM to PPTX - v1.2.5-FONT-SIM
  * Implements "Pre-Export Font Simulation" to fix text wrapping.
  * Function: Swaps browser fonts to PPTX-safe fonts (e.g. Arial) before measuring to ensure metrics match.
  * Use: LLMDomToPptx.export('selector', { fileName: '...' })
@@ -360,7 +360,7 @@
 
             if (isUniform) {
                 // Native Uniform - handled in main layer below
-            } else if (hasBorder && hasFill) {
+            } else if (hasBorder && hasFill && !isRoot) {
                 // Layered approach for NON-TRANSPARENT background
                 // Draw border "underlay" shapes, then the main fill covers the interior
                 if (bTop > 0 && style.borderTopStyle !== 'none') {
@@ -368,14 +368,11 @@
                     let bLi = safeNum(pxToInch(parseFloat(style.borderLeftWidth) || 0));
                     let bRi = safeNum(pxToInch(parseFloat(style.borderRightWidth) || 0));
                     let bTi = safeNum(pxToInch(parseFloat(style.borderTopWidth) || 0));
-
                     let lX = safeNum(x - bLi);
                     let lY = safeNum(y - bTi);
                     let lW = safeNum(w + bLi + bRi, 0.01);
                     let lH = safeNum(h + bTi, 0.01);
-
                     let lR = getR(safeNum(rect.width + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth)), safeNum(rect.height + parseFloat(style.borderTopWidth)));
-
                     this.slide.addShape(shapeName, {
                         x: lX, y: lY, w: lW, h: lH,
                         fill: { color: c.color, transparency: c.transparency },
@@ -387,14 +384,11 @@
                     let bLi = safeNum(pxToInch(parseFloat(style.borderLeftWidth) || 0));
                     let bRi = safeNum(pxToInch(parseFloat(style.borderRightWidth) || 0));
                     let bBi = safeNum(pxToInch(parseFloat(style.borderBottomWidth) || 0));
-
                     let lX = safeNum(x - bLi);
                     let lY = safeNum(y);
                     let lW = safeNum(w + bLi + bRi, 0.01);
                     let lH = safeNum(h + bBi, 0.01);
-
                     let lR = getR(safeNum(rect.width + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth)), safeNum(rect.height + parseFloat(style.borderBottomWidth)));
-
                     this.slide.addShape(shapeName, {
                         x: lX, y: lY, w: lW, h: lH,
                         fill: { color: c.color, transparency: c.transparency },
@@ -408,8 +402,7 @@
                     let lY = safeNum(y);
                     let lW = safeNum(w + bLi, 0.01);
                     let lH = safeNum(h, 0.01);
-                    let lR = stdRadius; // Matches main box
-
+                    let lR = stdRadius;
                     this.slide.addShape(shapeName, {
                         x: lX, y: lY, w: lW, h: lH,
                         fill: { color: c.color, transparency: c.transparency },
@@ -424,16 +417,16 @@
                     let lW = safeNum(w + bRi, 0.01);
                     let lH = safeNum(h, 0.01);
                     let lR = stdRadius;
-
                     this.slide.addShape(shapeName, {
                         x: lX, y: lY, w: lW, h: lH,
                         fill: { color: c.color, transparency: c.transparency },
                         rectRadius: lR
                     });
                 }
-            } else if (hasBorder && !hasFill && !isRoot) {
+            } else if (isRoot) {
+                // Skip LAYERED BORDERS for root
+            } else if (hasBorder && !hasFill) {
                 // TRANSPARENT background: Use lines instead of shapes
-                // This prevents "exposing" a white fill where none was intended
                 if (bTop > 0 && style.borderTopStyle !== 'none') {
                     const c = parseColor(style.borderTopColor);
                     const lineY = safeNum(y - pxToInch(bTop) / 2);
@@ -474,19 +467,15 @@
 
             // MAIN LAYER - No longer force white fill for transparent+border cases
 
-            if (isRoot) {
-                if (hasBorder && !isUniform) {
-                    let rootFill = bgParsed;
-                    if (rootFill.transparency === 100) rootFill = { color: 'FFFFFF', transparency: 0 };
-                    this.slide.addShape(shapeName, {
-                        x, y, w, h,
-                        fill: { color: rootFill.color, transparency: rootFill.transparency },
-                        rectRadius: stdRadius
-                    });
-                }
-            } else {
+            // MAIN LAYER
+            // v1.2.5 FIX: Root element is just a canvas, NO shapes (no fills, no borders, no shadows).
+            // Slide background is handled by exportToPPTX properties.
+            if (!isRoot) {
                 let mainOpts = { x, y, w, h };
-                if (hasFill) mainOpts.fill = { color: bgParsed.color, transparency: bgParsed.transparency };
+                if (hasFill) {
+                    mainOpts.fill = { color: bgParsed.color, transparency: bgParsed.transparency };
+                }
+
                 if (isUniform && hasBorder) {
                     const c = parseColor(style.borderTopColor);
                     if (c) {
@@ -693,7 +682,9 @@
                 const bg = window.getComputedStyle(t).backgroundColor;
                 const bgP = parseColor(bg);
                 if (bgP && bgP.transparency < 100) {
-                    s.background = { color: bgP.color, transparency: bgP.transparency };
+                    let bgObj = { color: bgP.color };
+                    if (bgP.transparency > 0) bgObj.transparency = bgP.transparency;
+                    s.background = bgObj;
                 }
                 await addSlide(pres, s, t, options);
             }

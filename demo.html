@@ -72,7 +72,7 @@
                 <p class="text-sm text-blue-900 leading-relaxed text-justify">
                     This is a long block of text intended to test the line wrapping capabilities of the library.
                     It should wrap perfectly at the edge of this container without being cut off or overflowing.
-                    The font simulation engine (v1.2.3) should ensure that even if the browser renders "Inter",
+                    The font simulation engine (v1.2.5) should ensure that even if the browser renders "Inter",
                     PowerPoint (rendering "Arial") will have enough space because we normalized weights and added a 1%
                     safety buffer.
                 </p>
@@ -253,7 +253,7 @@
                         <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Accuracy</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div class="text-2xl font-bold text-gray-800">1.2.3</div>
+                        <div class="text-2xl font-bold text-gray-800">1.2.5</div>
                         <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Version</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -347,6 +347,26 @@
                     Alpha 0
                 </div>
                 <span class="text-xs text-gray-500">rgba(0,0,0,0)</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SLIDE 6: Root Background Debug (User Case) -->
+    <!-- exact snippet from user query -->
+    <div id="slide-canvas-1"
+        class="slide relative bg-slate-900 w-[960px] h-[540px] overflow-hidden font-sans text-white slide-page border-4 border-yellow-400">
+        <div class="absolute top-0 left-0 w-full h-full flex flex-col justify-center px-20">
+            <div class="flex flex-col border-l-8 border-indigo-500 pl-8 py-2 mb-8">
+                <span class="text-indigo-400 font-bold tracking-[0.2em] text-xs uppercase mb-4 block">
+                    Root BG Debug
+                </span>
+                <h1 class="text-5xl font-bold text-white mb-4">
+                    bg-slate-900
+                </h1>
+                <p class="text-slate-400 text-xl max-w-2xl">
+                    This slide uses "bg-slate-900" on the root element. It should be dark blue/slate.
+                </p>
             </div>
         </div>
     </div>
