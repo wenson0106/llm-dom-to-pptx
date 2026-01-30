@@ -53,7 +53,7 @@
     </div>
 
     <!-- SLIDE 1: Typography & Wrapping -->
-    <div class="slide p-10 flex flex-col gap-6" id="slide1">
+    <div class="slide p-10 flex flex-col gap-6" id="slide1" style="background-color: #FDF4FF;">
         <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 w-full">1. Typography & Text
             Wrapping</h1>
 
@@ -72,7 +72,7 @@
                 <p class="text-sm text-blue-900 leading-relaxed text-justify">
                     This is a long block of text intended to test the line wrapping capabilities of the library.
                     It should wrap perfectly at the edge of this container without being cut off or overflowing.
-                    The font simulation engine (v1.2.2) should ensure that even if the browser renders "Inter",
+                    The font simulation engine (v1.2.3) should ensure that even if the browser renders "Inter",
                     PowerPoint (rendering "Arial") will have enough space because we normalized weights and added a 1%
                     safety buffer.
                 </p>
@@ -91,7 +91,7 @@
 
     <!-- SLIDE 2: Borders & Radius (The Core Fixes) -->
     <div class="slide p-10 flex flex-col gap-8" id="slide2">
-        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-green-500 pb-2 w-full">2. Borders & Radius (v1.2
+        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-green-500 pb-2 w-full">2. Borders & Radius (v1.2.3
             Fixes)</h1>
 
         <div class="grid grid-cols-4 gap-6 h-full">
@@ -253,7 +253,7 @@
                         <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Accuracy</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div class="text-2xl font-bold text-gray-800">1.2.2</div>
+                        <div class="text-2xl font-bold text-gray-800">1.2.3</div>
                         <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Version</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -267,6 +267,86 @@
                     class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl text-center shadow-lg cursor-pointer">
                     Confirm Action
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: Solid Color & Compatibility Debug -->
+    <div class="slide p-10 flex flex-col gap-6" id="slide5"
+        data-speaker-notes="This slide tests various color formats and background types to reproduce the solid color bug.">
+        <h1 class="text-4xl font-bold text-gray-800 border-b-4 border-purple-500 pb-2 w-full">5. Solid Color Debug</h1>
+
+        <div class="grid grid-cols-4 gap-6">
+            <!-- 5.1 Named Color -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-white font-bold shadow-md rounded-lg"
+                    style="background-color: blue;">
+                    Named
+                </div>
+                <span class="text-xs text-gray-500">color: blue</span>
+            </div>
+
+            <!-- 5.2 Hex Color -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-white font-bold shadow-md rounded-lg"
+                    style="background-color: #10B981;">
+                    Hex
+                </div>
+                <span class="text-xs text-gray-500">#10B981</span>
+            </div>
+
+            <!-- 5.3 RGB Color -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-white font-bold shadow-md rounded-lg"
+                    style="background-color: rgb(239, 68, 68);">
+                    RGB
+                </div>
+                <span class="text-xs text-gray-500">rgb(239, 68, 68)</span>
+            </div>
+
+            <!-- 5.4 HSL Color (Critical Test) -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-white font-bold shadow-md rounded-lg"
+                    style="background-color: hsl(270, 50%, 60%);">
+                    HSL
+                </div>
+                <span class="text-xs text-gray-500">hsl(270, 50%, 60%)</span>
+            </div>
+
+            <!-- 5.5 RGBA (Transparency) -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-gray-800 font-bold border-2 border-dashed border-gray-400 rounded-lg"
+                    style="background-color: rgba(255, 165, 0, 0.5);">
+                    RGBA
+                </div>
+                <span class="text-xs text-gray-500">rgba(..0.5)</span>
+            </div>
+
+            <!-- 5.6 Transparent Keyword -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-gray-800 font-bold border-4 border-gray-800 rounded-lg"
+                    style="background-color: transparent;">
+                    Transp.
+                </div>
+                <span class="text-xs text-gray-500">bg-color: transparent</span>
+            </div>
+
+            <!-- 5.7 No Background (Default) -->
+            <div class="flex flex-col items-center gap-2">
+                <div
+                    class="w-32 h-32 flex items-center justify-center text-gray-800 font-bold border-4 border-gray-300 rounded-lg">
+                    None
+                </div>
+                <span class="text-xs text-gray-500">No bg property</span>
+            </div>
+
+            <!-- 5.8 100% Transparent (rgba 0) -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-32 h-32 flex items-center justify-center text-gray-800 font-bold border-4 border-red-500 rounded-lg"
+                    style="background-color: rgba(0,0,0,0);">
+                    Alpha 0
+                </div>
+                <span class="text-xs text-gray-500">rgba(0,0,0,0)</span>
             </div>
         </div>
     </div>

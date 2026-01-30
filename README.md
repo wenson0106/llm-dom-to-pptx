@@ -29,8 +29,8 @@ https://github.com/user-attachments/assets/527efb28-b0ae-450a-9710-60cac2924acc
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/libs/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
 
-<!-- llm-dom-to-pptx v1.2.2 -->
-<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.2.2/dist/llm-dom-to-pptx.js"></script>
+<!-- llm-dom-to-pptx v1.2.3 -->
+<script src="https://cdn.jsdelivr.net/npm/llm-dom-to-pptx@1.2.3/dist/llm-dom-to-pptx.js"></script>
 ```
 
 ## 🎯 Usage
@@ -112,4 +112,4 @@ This library works best with **LLM-generated HTML** that follows specific constr
 
 ---
 
-**Version:** 1.2.2
+**Version:** 1.2.3

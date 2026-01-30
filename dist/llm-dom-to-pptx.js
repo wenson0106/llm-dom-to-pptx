@@ -1,5 +1,5 @@
 /**
- * LLM DOM to PPTX - v1.2.2-FONT-SIM
+ * LLM DOM to PPTX - v1.2.3-FONT-SIM
  * Implements "Pre-Export Font Simulation" to fix text wrapping.
  * Function: Swaps browser fonts to PPTX-safe fonts (e.g. Arial) before measuring to ensure metrics match.
  * Use: LLMDomToPptx.export('selector', { fileName: '...' })
@@ -124,41 +124,40 @@
     // ==========================================
     // 2. COLOR & GRADIENT UTILITIES
     // ==========================================
+    // REPLACEMENT: Canvas-based color parsing (Robus support for Named, HSL, RGB, etc.)
+    const _colorCanvas = document.createElement('canvas');
+    _colorCanvas.width = 1;
+    _colorCanvas.height = 1;
+    const _colorCtx = _colorCanvas.getContext('2d');
+
     function parseColor(colorStr, opacity = 1) {
-        if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') {
+        if (!colorStr || colorStr === 'none') return null;
+        if (colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') {
             return { color: 'FFFFFF', transparency: 100 };
         }
-        let r, g, b, a = 1;
 
-        if (colorStr.startsWith('#')) {
-            const hex = colorStr.substring(1);
-            if (hex.length === 3) {
-                r = parseInt(hex[0] + hex[0], 16);
-                g = parseInt(hex[1] + hex[1], 16);
-                b = parseInt(hex[2] + hex[2], 16);
-            } else {
-                r = parseInt(hex.substring(0, 2), 16);
-                g = parseInt(hex.substring(2, 4), 16);
-                b = parseInt(hex.substring(4, 6), 16);
-            }
-        } else if (colorStr.startsWith('rgb')) {
-            const values = colorStr.match(/(\d+(\.\d+)?)/g);
-            if (!values) return null;
-            r = parseFloat(values[0]);
-            g = parseFloat(values[1]);
-            b = parseFloat(values[2]);
-            if (values.length > 3) a = parseFloat(values[3]);
-        } else {
+        _colorCtx.clearRect(0, 0, 1, 1);
+        _colorCtx.fillStyle = colorStr;
+        _colorCtx.fillRect(0, 0, 1, 1);
+
+        const data = _colorCtx.getImageData(0, 0, 1, 1).data;
+        const r = data[0];
+        const g = data[1];
+        const b = data[2];
+        const a = data[3] / 255;
+
+        // If completely transparent according to canvas (and not explicitly handled above),
+        // it usually means invalid color or fully transparent.
+        if (a === 0 && colorStr !== 'transparent' && !colorStr.includes('rgba(0')) {
             return null;
         }
-
-        if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
 
         const finalAlpha = a * safeNum(opacity, 1);
         const toHex = (n) => {
             const h = Math.round(safeNum(n)).toString(16).toUpperCase();
             return h.length === 1 ? '0' + h : h;
         };
+
         return {
             color: toHex(r) + toHex(g) + toHex(b),
             transparency: Math.round((1 - finalAlpha) * 100)
@@ -490,7 +489,16 @@
                 if (hasFill) mainOpts.fill = { color: bgParsed.color, transparency: bgParsed.transparency };
                 if (isUniform && hasBorder) {
                     const c = parseColor(style.borderTopColor);
-                    if (c) mainOpts.line = { color: c.color, width: parseFloat(style.borderTopWidth) * 0.75 };
+                    if (c) {
+                        mainOpts.line = { color: c.color, width: parseFloat(style.borderTopWidth) * 0.75 };
+                        // Add Dash Support
+                        const dashMap = {
+                            'dashed': 'dash',
+                            'dotted': 'dot',
+                        };
+                        const dashType = dashMap[style.borderTopStyle];
+                        if (dashType) mainOpts.line.dashType = dashType;
+                    }
                 }
                 if (style.boxShadow && style.boxShadow !== 'none') {
                     mainOpts.shadow = { type: 'outer', angle: 45, blur: 6, offset: 2, opacity: 0.2 };
@@ -684,7 +692,9 @@
                 const s = pres.addSlide();
                 const bg = window.getComputedStyle(t).backgroundColor;
                 const bgP = parseColor(bg);
-                if (bgP && bgP.transparency < 100) s.background = { color: bgP.color };
+                if (bgP && bgP.transparency < 100) {
+                    s.background = { color: bgP.color, transparency: bgP.transparency };
+                }
                 await addSlide(pres, s, t, options);
             }
             await pres.writeFile({ fileName });
